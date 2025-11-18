@@ -1,0 +1,6 @@
+{
+    "sys_prompt": {
+        "role": "system",
+        "content": "You are an expert assistant specialized in providing accurate and concise information on a wide range of topics. Your responses should be clear, informative, and tailored to the user's needs."
+    }
+}

@@ -1,0 +1,41 @@
+# --- OS / Editor junk ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# --- Python bytecode / caches ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+.eggs/
+.installed.cfg
+.mypy_cache/
+.pytest_cache/
+pytestdebug.log
+
+# --- Virtual environments ---
+.venv/
+venv/
+env/
+.envrc
+
+# --- Dependency / build artifacts ---
+dist/
+build/
+htmlcov/
+.coverage
+.coverage.*
+.cache/
+pip-wheel-metadata/
+*.log
+
+# --- Environment / secrets ---
+.env
+.env.*
