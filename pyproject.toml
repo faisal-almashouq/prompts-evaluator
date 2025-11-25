@@ -9,6 +9,7 @@ dependencies = [
     "google-genai>=1.50.1",
     "openai>=2.8.0",
     "pipecat-ai[azure,daily,google,openai,webrtc]>=0.0.94",
+    "pipecat-ai-small-webrtc-prebuilt>=1.0.0",
     "pydantic>=2.12.4",
     "python-dotenv>=1.2.1",
     "requests>=2.32.5",

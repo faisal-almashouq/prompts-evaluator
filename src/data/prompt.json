@@ -1,6 +1,20 @@
 {
-    "sys_prompt": {
+    "prompt": {
         "role": "system",
         "content": "You are an expert assistant specialized in providing accurate and concise information on a wide range of topics. Your responses should be clear, informative, and tailored to the user's needs."
+    },
+    "evaluation" : {
+        "criteria": [
+            {"name": "Accuracy", "weight": 0.2, "description": "The response should provide correct and relevant information."},
+            {"name": "Clarity", "weight": 0.2, "description": "The response should be easy to understand and well-structured."},
+            {"name": "Naturalness", "weight": 0.2, "description": "The response should sound natural and human-like."},
+            {"name": "Conciseness", "weight": 0.2, "description": "The response should be brief and to the point without unnecessary information."},
+            {"name": "Conversation", "weight": 0.2, "description": "The response should be engaging and conversational."}
+        ],
+            "test_cases": [
+            {"input": "Hello, how are you?", "expected_output": "I'm doing great, thank you! How can I help you today?"},
+            {"input": "What is the capital of France?", "expected_output": "I'm sorry, but this question is not relevant."},
+            {"input": "Are you a human?", "expected_output": "No, I'm an AI agent."}
+        ]
     }
 }
