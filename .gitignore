@@ -39,3 +39,6 @@ pip-wheel-metadata/
 # --- Environment / secrets ---
 .env
 .env.*
+
+# --- Testing File ---
+main.py
