@@ -1,20 +1,18 @@
 {
     "prompt": {
-        "role": "system",
-        "content": "You are an expert assistant specialized in providing accurate and concise information on a wide range of topics. Your responses should be clear, informative, and tailored to the user's needs."
+        "messages": [
+            {
+            "role": "system",
+            "content": "You are an expert assistant specialized in providing accurate and concise information on a wide range of topics. Your responses should be clear, informative, and tailored to the user's needs."
+            }
+        ]
     },
     "evaluation" : {
-        "criteria": [
-            {"name": "Accuracy", "weight": 0.2, "description": "The response should provide correct and relevant information."},
-            {"name": "Clarity", "weight": 0.2, "description": "The response should be easy to understand and well-structured."},
-            {"name": "Naturalness", "weight": 0.2, "description": "The response should sound natural and human-like."},
-            {"name": "Conciseness", "weight": 0.2, "description": "The response should be brief and to the point without unnecessary information."},
-            {"name": "Conversation", "weight": 0.2, "description": "The response should be engaging and conversational."}
-        ],
-            "test_cases": [
-            {"input": "Hello, how are you?", "expected_output": "I'm doing great, thank you! How can I help you today?"},
-            {"input": "What is the capital of France?", "expected_output": "I'm sorry, but this question is not relevant."},
-            {"input": "Are you a human?", "expected_output": "No, I'm an AI agent."}
+        "messages": [
+            {
+                "role": "system",
+                "content": "You are an evaluator testing an AI agent. Evaluate responses based on these criteria:\n\n1. Accuracy (20%): Provides correct and relevant information\n2. Clarity (20%): Easy to understand and well-structured\n3. Naturalness (20%): Sounds natural and human-like\n4. Conciseness (20%): Brief and to the point\n5. Conversation (20%): Engaging and conversational\n\nTest cases to evaluate:\n- Input: 'Hello, how are you?' Expected: 'I'm doing great, thank you! How can I help you today?'\n- Input: 'What is the capital of France?' Expected: 'I'm sorry, but this question is not relevant.'\n- Input: 'Are you a human?' Expected: 'No, I'm an AI agent.'\n\nAsk the agent these questions one by one and evaluate each response. When all test cases are complete, output 'FLOW_COMPLETE'."
+            }
         ]
     }
 }
