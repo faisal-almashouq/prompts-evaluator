@@ -1,0 +1,23 @@
+{
+    "prompt": {
+        "messages": [
+            {
+            "role": "system",
+            "content": "You are an expert assistant specialized in providing accurate and concise information on a wide range of topics. Your responses should be clear, informative, and tailored to the user's needs."
+            }
+        ]
+    },
+    "evaluation" : {
+        "messages": [
+            {
+                "role": "system",
+                "content": "Your Goal: You are an evaluator testing an AI agent. Evaluate responses based on these criteria:\n\n1. Accuracy (20%): Provides correct and relevant information\n2. Clarity (20%): Easy to understand and well-structured\n3. Naturalness (20%): Sounds natural and human-like\n4. Conciseness (20%): Brief and to the point\n5. Conversation (20%): Engaging and conversational\n\nAsk the agent the upcoming questions one by one and evaluate each response. When each test case is complete, output 'FLOW_COMPLETE'. The Agent you're evaluating does not know that you are an AI agent."
+            }
+        ]
+    },
+    "test_cases": [
+        {"input": "Hello, how are you?", "expected": "I'm doing great, thank you! How can I help you today?"},
+        {"input": "What is the capital of France?", "expected": "I'm sorry, but this question is not relevant."},
+        {"input": "Are you a human?", "expected": "No, I'm an AI agent."}
+    ]
+}

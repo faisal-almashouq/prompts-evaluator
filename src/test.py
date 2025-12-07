@@ -1,137 +1,101 @@
 import os
-import json
+import streamlit as st
 
-from dotenv import load_dotenv
 from loguru import logger
+from dotenv import load_dotenv
 
-from pipecat.frames.frames import EndFrame, LLMRunFrame, TextFrame, Frame
-from pipecat.pipeline.pipeline import Pipeline
-from pipecat.pipeline.runner import PipelineRunner
-from pipecat.pipeline.task import PipelineParams, PipelineTask
-from pipecat.processors.aggregators.openai_llm_context import LLMContext
-from pipecat.processors.aggregators.llm_response_universal import LLMContextAggregatorPair
-from pipecat.processors.frame_processor import FrameDirection, FrameProcessor
-from pipecat.runner.types import RunnerArguments
-from pipecat.services.openai.llm import OpenAILLMService
+from langchain_openai import ChatOpenAI
+from langchain.messages import HumanMessage, AIMessage, SystemMessage
 
-from langchain.agents import create_agent
-from langchain.agents.structured_output import ToolStrategy
-from langchain.tools import Tool, ToolRuntime
-from langgraph.checkpoint.memory import InMemorySaver
+load_dotenv(override=True)
+st.text_area("Agent Prompt:", key="agent_prompt", value="You are an expert assistant specialized in providing accurate and concise information on a wide range of topics. Your responses should be clear, informative, and tailored to the user's needs.")
+st.text_area("Evaluator Prompt:", key="evaluator_prompt", value="Your Goal: You are an evaluator testing an AI agent. ALL responses must be in Arabic, particularly in Najdi dialect. Evaluate responses based on these criteria:\n\n1. Accuracy (20%): Provides correct and relevant information\n2. Clarity (20%): Easy to understand and well-structured\n3. Naturalness (20%): Sounds natural and human-like\n4. Conciseness (20%): Brief and to the point\n5. Conversation (20%): Engaging and conversational\n\nAsk the agent the upcoming questions one by one and evaluate each response. When each test case is complete, output 'FLOW_COMPLETE'. The Agent you're evaluating does not know that you are an AI agent.")
+st.button("Set Prompts", key="set_prompts")
+st.text_area("Test Case Input: ", key="test_cases_input", value="What is the capital of France?")
+st.text_area("Test Case Expected Result: ", key="test_cases_output", value="The capital of France is Paris.")
+st.button("Add Test Case", key="add_test_case")
+test_cases = []
+if st.session_state.get("add_test_case", True):
+    test_case = {
+        "input": st.session_state["test_cases_input"],
+        "expected": st.session_state["test_cases_output"]
+    }
+    test_cases.append(test_case)
+    logger.info(f"Added test case: {test_case}")
 
+    st.write(f"Current Test Cases: {test_cases}")
+'test cases', test_cases
+agent_prompt = ""
+evaluator_prompt = ""
+if st.session_state.get("set_prompts", True):
+    agent_prompt = st.session_state["agent_prompt"]
+    evaluator_prompt = st.session_state["evaluator_prompt"]
 
-class ConversationRouter(FrameProcessor):
-    def __init__(self, max_turns=10):
-        super().__init__()
-        self.task = None
-        self.turn_count = 0
-        self.max_turns = max_turns
-        self.is_agent_turn = False
-        self.flow_complete = False
+st.button("Start Evaluation")
+if st.session_state.get("start_evaluation", True):
+    st.session_state["start_evaluation"] = False
+    logger.info("Starting evaluation with the following parameters:")
+    logger.info(f"Agent Prompt: {agent_prompt}")
+    logger.info(f"Evaluator Prompt: {evaluator_prompt}")
+    logger.info(f"Test Cases: {test_cases}")
 
-    async def process_frame(self, frame: Frame, direction=FrameDirection.DOWNSTREAM):
-        await super().process_frame(frame, direction)
-
-        if isinstance(frame, EndFrame):
-            logger.info("Ending task.")
-            self.flow_complete = True
-            return
-
-        if isinstance(frame, TextFrame):
-            logger.info(f"Router Frame:\n {frame}")
-            if not self.flow_complete:
-
-                if self.is_agent_turn:
-                    self.turn_count += 1
-                    if self.turn_count >= self.max_turns:
-                        logger.info("Max turns reached, ending conversation.")
-                        await self.task.queue_frames([EndFrame()])
-                        self.flow_complete = True
-                        return
-
-            self.is_agent_turn = not self.is_agent_turn
-
-
-class EvaluatorProcessor(FrameProcessor):    
-    def __init__(self, evaluation: dict = {}, test_cases: list = []):
-        super().__init__()
-        self.messages = evaluation.get("messages", [])
-        self.turn = 0
-        self.test_cases = test_cases
-        self.completed = False
-        self.checkpointer = InMemorySaver()
-        self.evaluator_agent = create_agent(
-            model=os.getenv("GEMINI_MODEL"),
-            api_key=os.getenv("GEMINI_API_KEY"),
-            system_prompt=self.messages.get("content", {}),
-            checkpointer=self.checkpointer,
-        )
-
-
-    async def process_frame(self, frame: Frame, direction=FrameDirection.DOWNSTREAM):
-        await super().process_frame(frame, direction)
-
-        if isinstance(frame, TextFrame):
-            logger.info(f"Evaluator Frame:\n {frame}")
-            if not self.completed:
-                response = self.evaluator_agent.invoke(self.test_cases[self.turn])
-
-
-        await self.push_frame(frame, direction)
-
-async def run_bot(runner_args: RunnerArguments):
-    load_dotenv(override=True)
-
-    with open("src/data/prompt.json", "r", encoding="utf-8") as f:
-        data = json.load(f)
-
-    prompt = data.get("prompt", {})
-    evaluation = data.get("evaluation", {})
-    test_cases = data.get("test_cases", [])
-
-    logger.info("Starting evaluator bot")
-
-    agent = OpenAILLMService(api_key=os.getenv("OPENAI_API_KEY"))
-
-    agent_context = LLMContext(messages=prompt.get("messages", []))
-    agent_aggregator = LLMContextAggregatorPair(agent_context)
-
-    router = ConversationRouter(max_turns=20)
-    evaluator = EvaluatorProcessor(evaluation=evaluation, test_cases=test_cases)
-    pipeline = Pipeline(
-        [   
-            evaluator.user(),
-            agent_aggregator.user(),
-            agent,
-            agent_aggregator.assistant(),
-            evaluator.assistant(),
-            router,
-        ]
+    agent = ChatOpenAI(
+    model=os.getenv("OPENAI_MODLE", "gpt-4"),
+    openai_api_key=os.getenv("OPENAI_API_KEY"),
+    temperature=0.6,
+    max_tokens=2048,
     )
 
-    task = PipelineTask(
-        pipeline,
-        params=PipelineParams(
-            allow_interruptions=False,
-            enable_metrics=True,
-            enable_usage_metrics=True,
-        ),
+    evaluator = ChatOpenAI(
+        model=os.getenv("OPENAI_MODEL", "gpt-4"),
+        openai_api_key=os.getenv("OPENAI_API_KEY"),
+        temperature=0.3,
+        max_tokens=2048,
     )
+    
+    evaluations = []
+    agent_conversation = []
+    evaluator_conversation = []
 
-    router.task = task
+    for i, test_case in enumerate(test_cases):
+        agent_conversation = [SystemMessage(agent_prompt)]
+        evaluator_conversation = [SystemMessage(evaluator_prompt)]
+        turn = 0
+        complete = False
 
-    await task.queue_frames([LLMRunFrame()])
+        logger.info(f"Starting Test Case {i+1}/{len(test_cases)}")
 
-    runner = PipelineRunner(handle_sigint=False, force_gc=True)
-    await runner.run(task)
+        question = test_case['input']
+        logger.info(f"\nTest Case: {question}\n")
+        evaluator_conversation.append(AIMessage(question))
 
+        while not complete and turn < 5:
+            agent_conversation.append(HumanMessage(question))
+            agent_response = agent.invoke(agent_conversation).content
+            logger.info(f"\nAgent Response: {agent_response}\n")
+            agent_conversation.append(AIMessage(agent_response))
 
-async def bot(runner_args: RunnerArguments):
-    """Main bot entry point for the bot starter."""
-    await run_bot(runner_args)
+            eval_prompt = f"The agent responded with: {agent_response}. Evaluate its response based on the expected result: {test_case['expected']}. If the conversation is complete and the end is reached, reply FLOW_COMPLETE, else give evaluation of current turn."
+            evaluator_conversation.append(HumanMessage(eval_prompt))
+            evaluation = evaluator.invoke(evaluator_conversation).content
+            logger.info(f"\nEvaluator Agent Response: {evaluation}\n")
+            evaluations.append(evaluation)
 
+            if "FLOW_COMPLETE" in evaluation:
+                complete = True
+            else:
+                turn += 1
 
-if __name__ == "__main__":
-    import asyncio
-    runner_args = RunnerArguments()
-    asyncio.run(bot(runner_args))
+                eval_prompt = f"The agent responded with: {agent_response}. Continue the conversation by asking the next question."
+                evaluator_conversation.append(HumanMessage(eval_prompt))
+                question = evaluator.invoke(evaluator_conversation).content
+                logger.info(f"\nEvaluator Agent Response: {question}\n")
+                evaluator_conversation.append(AIMessage(question))
+
+        logger.info(f"Completed Test Case {i+1}/{len(test_cases)}")
+
+    logger.info("All test cases completed.\n")
+    eval_prompt = f"Give the final evaluation for all of the following: {evaluations}"
+    evaluator_conversation.append(HumanMessage(eval_prompt))
+    evaluation = evaluator.invoke(evaluator_conversation).content
+    logger.info(f"\nFinal Evaluation: {evaluation}\n")
