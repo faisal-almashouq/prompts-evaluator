@@ -204,7 +204,7 @@ print("\nEvaluation Prompt:\n", evaluation_prompt)
 print("\nLoaded test cases:\n", test_cases)
 
 agent = ChatOpenAI(
-    model=os.getenv("OPENAI_MODLE", "gpt-4"),
+    model=os.getenv("OPENAI_MODEL", "gpt-4"),
     openai_api_key=os.getenv("OPENAI_API_KEY"),
     temperature=0.6,
     max_tokens=2048,
@@ -239,7 +239,7 @@ for i, test_case in enumerate(test_cases):
         print(f"\nAgent Response: {agent_response}\n")
         agent_conversation.append(AIMessage(agent_response))
 
-        eval_prompt = f"The agent responded with: {agent_response}. Evaluate its response based on the expected result: {test_case['expected']}. If the conversation is complete and the end is reached, reply FLOW_COMPLETE, else give evaluation of current turn."
+        eval_prompt = f"The agent responded with: {agent_response}. Evaluate its response based on the expected result: {test_case['expected']}. If the conversation is complete and the end is reached, reply 'FLOW_COMPLETE', else give evaluation of current turn."
         evaluator_conversation.append(HumanMessage(eval_prompt))
         evaluation = evaluator.invoke(evaluator_conversation).content
         print(f"\nEvaluator Agent Response: {evaluation}\n")
